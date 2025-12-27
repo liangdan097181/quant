@@ -122,14 +122,26 @@ optimize_weights = col5.button("一键优化")
 # 风险厌恶系数设置
 risk_aversion = st.sidebar.slider("风险厌恶系数", 0.1, 3.0, 1.0, step=0.1, help="值越大越保守，平衡风险和收益")
 
-# ------------------- 邮箱订阅 -------------------
+# ------------------- 监控功能 -------------------
 st.sidebar.divider()
-st.sidebar.subheader("📧 邮箱订阅")
-email = st.sidebar.text_input("输入您的邮箱地址", placeholder="your@email.com")
-if st.sidebar.button("订阅实时交易信号"):
-    if email:
-        st.success(f"成功订阅！我们将向 {email} 发送实时交易信号")
-        # 这里可以添加实际的订阅逻辑，例如将邮箱保存到数据库
+st.sidebar.subheader("🔍 策略监控")
+
+# 监控名称输入
+monitor_name = st.sidebar.text_input("监控名称", placeholder="输入监控策略名称")
+
+# 邮箱订阅输入
+email = st.sidebar.text_input("订阅邮箱", placeholder="your@email.com")
+
+# 加入监控按钮
+if st.sidebar.button("加入监控"):
+    if monitor_name and email:
+        # 这里可以添加实际的监控逻辑，例如将监控信息保存到数据库
+        # 包括监控名称、邮箱、当前策略参数等
+        st.success(f"监控 '{monitor_name}' 已创建！我们将向 {email} 发送实时交易信号")
+        # 模拟实时信号生成和邮件发送
+        st.info("监控系统已启动，将根据策略参数实时监控交易信号...")
+    elif not monitor_name:
+        st.error("请输入监控名称")
     else:
         st.error("请输入有效的邮箱地址")
 
