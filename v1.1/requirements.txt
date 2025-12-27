@@ -1,0 +1,7 @@
+pandas
+numpy
+akshare
+streamlit
+plotly
+matplotlib
+pyarrow
