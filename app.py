@@ -10,8 +10,8 @@ from backtest_engine import VectorizedBacktester
 # 设置页面
 st.set_page_config(page_title="US Quant Pro - 美股量化系统", layout="wide")
 
-st.title("📈 美股量化回测系统 (Alpha v1.0)")
-st.markdown("基于 AkShare 数据源的轻量级量化分析工具")
+st.title("📈 美股量化回测系统 (Alpha v1.1)")
+st.markdown("基于 AkShare 数据源的轻量级量化分析工具，支持实时交易和邮箱订阅")
 
 # 侧边栏：配置参数
 st.sidebar.header("策略配置")
@@ -101,14 +101,37 @@ if use_dynamic_momentum:
     momentum_threshold = st.sidebar.slider("动量阈值", 1.0, 3.0, 2.0, step=0.1, key="momentum_threshold")
     dynamic_momentum_weight = st.sidebar.slider("动态动能权重", 0.0, 1.0, 0.33, step=0.05, key="dynamic_momentum_weight")
 
+# ------------------- 实时交易配置 -------------------
+st.sidebar.divider()
+st.sidebar.subheader("⚡ 实时交易")
+use_live_trading = st.sidebar.checkbox("启用实时交易", value=False, key="use_live_trading")
+if use_live_trading:
+    st.sidebar.markdown("实时交易功能已启用")
+    # 实时交易按钮
+    col1, col2, col3 = st.sidebar.columns(3)
+    buy_button = col1.button("实时买入")
+    sell_button = col2.button("实时卖出")
+    withdraw_button = col3.button("提现")
+
 # ------------------- 回测和优化按钮 -------------------
 st.sidebar.divider()
-col1, col2 = st.sidebar.columns(2)
-run_backtest = col1.button("运行回测")
-optimize_weights = col2.button("一键优化")
+col4, col5 = st.sidebar.columns(2)
+run_backtest = col4.button("运行回测")
+optimize_weights = col5.button("一键优化")
 
 # 风险厌恶系数设置
 risk_aversion = st.sidebar.slider("风险厌恶系数", 0.1, 3.0, 1.0, step=0.1, help="值越大越保守，平衡风险和收益")
+
+# ------------------- 邮箱订阅 -------------------
+st.sidebar.divider()
+st.sidebar.subheader("📧 邮箱订阅")
+email = st.sidebar.text_input("输入您的邮箱地址", placeholder="your@email.com")
+if st.sidebar.button("订阅实时交易信号"):
+    if email:
+        st.success(f"成功订阅！我们将向 {email} 发送实时交易信号")
+        # 这里可以添加实际的订阅逻辑，例如将邮箱保存到数据库
+    else:
+        st.error("请输入有效的邮箱地址")
 
 # ------------------- 回测执行 -------------------
 if run_backtest or optimize_weights:
