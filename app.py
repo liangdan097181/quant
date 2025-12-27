@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
+import uuid
 
 from data_loader import StockDataFetcher
 from factor_engine import FactorEngine
@@ -12,6 +13,14 @@ st.set_page_config(page_title="US Quant Pro - 美股量化系统", layout="wide"
 
 st.title("📈 美股量化回测系统 (Alpha v1.1)")
 st.markdown("基于 AkShare 数据源的轻量级量化分析工具，支持实时交易和邮箱订阅")
+
+# 初始化session_state存储监控列表
+if 'monitor_list' not in st.session_state:
+    st.session_state.monitor_list = []
+
+# 生成唯一监控ID
+if 'monitor_id_counter' not in st.session_state:
+    st.session_state.monitor_id_counter = 1
 
 # 侧边栏：配置参数
 st.sidebar.header("策略配置")
@@ -135,8 +144,28 @@ email = st.sidebar.text_input("订阅邮箱", placeholder="your@email.com")
 # 加入监控按钮
 if st.sidebar.button("加入监控"):
     if monitor_name and email:
-        # 这里可以添加实际的监控逻辑，例如将监控信息保存到数据库
-        # 包括监控名称、邮箱、当前策略参数等
+        # 生成唯一监控ID
+        monitor_id = str(uuid.uuid4())[:8]
+        
+        # 构建监控信息
+        monitor_info = {
+            'id': monitor_id,
+            'name': monitor_name,
+            'ticker': ticker,
+            'email': email,
+            'start_date': start_date,
+            'end_date': end_date,
+            'initial_capital': initial_capital,
+            'commission': commission,
+            'risk_aversion': risk_aversion,
+            'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'status': 'active',
+            'total_return': 0.0
+        }
+        
+        # 保存到session_state
+        st.session_state.monitor_list.append(monitor_info)
+        
         st.success(f"监控 '{monitor_name}' 已创建！我们将向 {email} 发送实时交易信号")
         # 模拟实时信号生成和邮件发送
         st.info("监控系统已启动，将根据策略参数实时监控交易信号...")
@@ -144,6 +173,30 @@ if st.sidebar.button("加入监控"):
         st.error("请输入监控名称")
     else:
         st.error("请输入有效的邮箱地址")
+
+# 显示监控列表
+if st.session_state.monitor_list:
+    st.sidebar.subheader("📋 监控列表")
+    
+    for monitor in st.session_state.monitor_list:
+        with st.sidebar.expander(f"{monitor['name']} ({monitor['ticker']})", expanded=False):
+            col1, col2 = st.sidebar.columns(2)
+            col1.markdown(f"**ID**: {monitor['id']}")
+            col2.markdown(f"**状态**: {monitor['status']}")
+            st.sidebar.markdown(f"**邮箱**: {monitor['email']}")
+            st.sidebar.markdown(f"**创建时间**: {monitor['created_at']}")
+            st.sidebar.markdown(f"**累计收益**: {monitor['total_return']:.2f}%")
+            
+            # 操作按钮
+            col3, col4 = st.sidebar.columns(2)
+            if col3.button(f"删除", key=f"delete_{monitor['id']}"):
+                st.session_state.monitor_list = [m for m in st.session_state.monitor_list if m['id'] != monitor['id']]
+                st.experimental_rerun()
+            
+            if col4.button(f"查看收益", key=f"view_{monitor['id']}"):
+                # 这里可以添加查看收益的逻辑，例如显示该监控的历史收益曲线
+                st.session_state.current_monitor = monitor
+                st.success(f"已加载监控 '{monitor['name']}' 的收益数据")
 
 # ------------------- 回测执行 -------------------
 if run_backtest or optimize_weights:
@@ -296,6 +349,47 @@ if run_backtest or optimize_weights:
                         # 只显示存在的列
                         available_columns = [col for col in key_columns if col in results.columns]
                         st.dataframe(results[available_columns].tail(20), width='stretch')
+                    
+                    # 更新监控收益数据
+                    if monitor_name:
+                        # 查找对应的监控
+                        for monitor in st.session_state.monitor_list:
+                            if monitor['name'] == monitor_name and monitor['ticker'] == ticker:
+                                # 更新收益数据
+                                monitor['total_return'] = metrics['Total Return (%)']
+                                monitor['status'] = 'active'
+                                break
+                    
+                    # 监控信号展示
+                    st.subheader("📡 实时监控信号")
+                    # 模拟生成监控信号
+                    latest_signal = results['signal'].iloc[-1]
+                    latest_close = results['Close'].iloc[-1]
+                    
+                    if latest_signal == 1:
+                        st.success(f"📈 买入信号！\n\n股票代码: {ticker}\n信号时间: {results.index[-1].strftime('%Y-%m-%d')}\n买入价格: ${latest_close:.2f}\n\n策略: {monitor_name if monitor_name else '未命名'}\n状态: 监控中")
+                        # 模拟邮件发送
+                        if email:
+                            st.info(f"📧 交易信号已发送至: {email}")
+                    elif latest_signal == 0:
+                        st.info(f"📊 观望信号！\n\n股票代码: {ticker}\n信号时间: {results.index[-1].strftime('%Y-%m-%d')}\n当前价格: ${latest_close:.2f}\n\n策略: {monitor_name if monitor_name else '未命名'}\n状态: 监控中")
+                    else:
+                        st.warning(f"⚠️ 卖出信号！\n\n股票代码: {ticker}\n信号时间: {results.index[-1].strftime('%Y-%m-%d')}\n卖出价格: ${latest_close:.2f}\n\n策略: {monitor_name if monitor_name else '未命名'}\n状态: 监控中")
+                        # 模拟邮件发送
+                        if email:
+                            st.info(f"📧 交易信号已发送至: {email}")
+                    
+                    # 显示当前监控的收益曲线
+                    if 'current_monitor' in st.session_state:
+                        st.subheader(f"📊 {st.session_state.current_monitor['name']} 收益曲线")
+                        # 模拟收益曲线
+                        fig = go.Figure()
+                        fig.add_trace(go.Scatter(x=results.index, y=results['equity'], mode='lines', name='策略净值'))
+                        fig.add_trace(go.Scatter(x=results.index, y=results['Close'] * (initial_capital / results['Close'].iloc[0]), 
+                                               mode='lines', name='基准 (买入持有)', line=dict(dash='dash', color='gray')))
+                        fig.update_layout(title=f"监控 '{st.session_state.current_monitor['name']}' 收益表现", 
+                                         xaxis_title="日期", yaxis_title="资金净值 ($)", height=400)
+                        st.plotly_chart(fig, width='stretch')
             else:
                 st.error(f"无法获取代码为 {ticker} 的股票数据，请检查输入或网络。")
 else:
