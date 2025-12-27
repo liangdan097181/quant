@@ -12,7 +12,7 @@ from backtest_engine import VectorizedBacktester
 st.set_page_config(page_title="US Quant Pro - 美股量化系统", layout="wide")
 
 st.title("📈 美股量化回测系统 (Alpha v1.1)")
-st.markdown("基于 AkShare 数据源的轻量级量化分析工具，支持实时交易和邮箱订阅")
+st.markdown("基于 AkShare 数据源的轻量级量化分析工具，支持策略监控和邮箱订阅")
 
 # 初始化session_state存储监控列表
 if 'monitor_list' not in st.session_state:
@@ -110,17 +110,7 @@ if use_dynamic_momentum:
     momentum_threshold = st.sidebar.slider("动量阈值", 1.0, 3.0, 2.0, step=0.1, key="momentum_threshold")
     dynamic_momentum_weight = st.sidebar.slider("动态动能权重", 0.0, 1.0, 0.33, step=0.05, key="dynamic_momentum_weight")
 
-# ------------------- 实时交易配置 -------------------
-st.sidebar.divider()
-st.sidebar.subheader("⚡ 实时交易")
-use_live_trading = st.sidebar.checkbox("启用实时交易", value=False, key="use_live_trading")
-if use_live_trading:
-    st.sidebar.markdown("实时交易功能已启用")
-    # 实时交易按钮
-    col1, col2, col3 = st.sidebar.columns(3)
-    buy_button = col1.button("实时买入")
-    sell_button = col2.button("实时卖出")
-    withdraw_button = col3.button("提现")
+
 
 # ------------------- 回测和优化按钮 -------------------
 st.sidebar.divider()
